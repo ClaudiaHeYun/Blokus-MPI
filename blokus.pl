@@ -8,7 +8,7 @@ blokus.pl - Stylize photos of Blokus boards
 
 =head1 SYNOPSIS
 
-    $ perl blokus.pl [--filtered=file] [--scaled=file] [--color-table=file] infile [outfile]
+    $ perl blokus.pl [--filtered=file] [--scaled=file] [--color-table=file] [--output=file] infile [outfile]
 
 For example:
 
@@ -53,6 +53,13 @@ the reference values of red, green, blue, yellow and white for the the image.
 Use this option to specify a location where this table should be rendered
 as an image consisting of five 50x50 solidly colored squares.
 
+=item B<--output>=I<file>
+
+If given, the board is synthesized into this image file using a stylized
+tile and board. The file can also be provided as the last argument without
+the B<--output> option. Use this option if you want the image file and also
+see the board on stdout.
+
 =back
 
 =cut
@@ -62,6 +69,7 @@ GetOptions(
     'filtered=s'    => \my $filtered_file,
     'scaled=s'      => \my $scaled_file,
     'color-table=s' => \my $color_table_file,
+    'output=s'      => \my $image_file,
 ) or pod2usage(2);
 
 pod2usage(-exitval => 0, -verbose => 1) if $help;
@@ -286,7 +294,15 @@ space next to it, to make it visually more square.
 
 =back
 
+If you want both, stdout and image output, specify the image location using
+the B<--output> option and leave out the I<outfile> argument.
+
 =cut
+
+if ($image_file) {
+    info "Writing image to $image_file";
+    image_output($board => $image_file);
+}
 
 if (defined $outfile) {
     if (not try { require Image::Magick; 1 }) {
