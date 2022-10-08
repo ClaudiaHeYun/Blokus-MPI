@@ -33,7 +33,7 @@ the input photographs.
     my $dst = apply_filters($src, $dst);
 
 Apply a predefined set of G'MIC filters to amplify colors and blur the
-image to hopefully reduce flares from the photograph.
+image to hopefully reduce glares from the photograph.
 
 =cut
 

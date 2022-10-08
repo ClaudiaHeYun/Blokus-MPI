@@ -39,8 +39,8 @@ like RGB to L*a*b* color space conversion or (Euclidean) color distance.
     my ($L, $a, $b) = rgb_to_cielab($R, $G, $B);
 
 Convert an RGB color triple to L*a*b* coordinates, as per
-L<http://www.easyrgb.com/en/math.php>. Takes an array and
-returns an array.
+L<http://www.easyrgb.com/en/math.php> and using the D65 (Daylight)
+reference values. Takes an array and returns an array.
 
 =cut
 
@@ -68,6 +68,43 @@ sub rgb_to_cielab :Export(:color) {
     my $b = 200 * ($Y - $Z);
 
     ($L, $a, $b)
+}
+
+=head3 cielab_to_rgb :Export(:color)
+
+    my ($R, $G, $B) = cielab_to_rgb($L, $a, $b);
+
+Convert a L*a*b* color triple to RGB coordinates, as per
+L<http://www.easyrgb.com/en/math.php> and using the D65 (Daylight)
+reference values. Takes an array and returns an array.
+
+=cut
+
+sub cielab_to_rgb :Export(:color) {
+    my ($L, $a, $b) = @_;
+
+    my $Y = ($L + 16) / 116;
+    my $X = $a / 500 + $Y;
+    my $Z = $Y - $b / 200;
+
+    $Y = $Y ** 3 > 0.008856 ? $Y ** 3 : ($Y - 0.13793) / 7.787;
+    $X = $X ** 3 > 0.008856 ? $X ** 3 : ($X - 0.13793) / 7.787;
+    $Z = $Z ** 3 > 0.008856 ? $Z ** 3 : ($Z - 0.13793) / 7.787;
+
+    # Reference values: D65 (Daylight)
+    $X *= 0.95047;
+    $Y *= 1.00000;
+    $Z *= 1.08883;
+
+    my $R = $X *  3.2406 + $Y * -1.5372 + $Z * -0.4986;
+    my $G = $X * -0.9689 + $Y *  1.8758 + $Z *  0.0415;
+    my $B = $X *  0.0557 + $Y * -0.2040 + $Z *  1.0570;
+
+    $R = $R > 0.0031308 ? 1.055 * $R ** 0.41666 - 0.055 : 12.92 * $R;
+    $G = $G > 0.0031308 ? 1.055 * $G ** 0.41666 - 0.055 : 12.92 * $G;
+    $B = $B > 0.0031308 ? 1.055 * $B ** 0.41666 - 0.055 : 12.92 * $B;
+
+    ($R, $G, $B)
 }
 
 =head3 color_distance :Export(:color)
@@ -107,16 +144,18 @@ sub avg :Export(:guts) {
 
 =head3 cluster_colors :Export(:DEFAULT)
 
-    my $board = cluster_colors($src, progress => sub{...});
+    my ($board, @centers) = cluster_colors($src, progress => sub{...});
 
 Convert a 20x20 pixel color image into a textual representation of the board
-using letters W (white), R (red), G (green), B (blue) and Y (yellow). Colors
+using letters R (red), G (green), B (blue), Y (yellow) and W (white). Colors
 are classified using k-means clustering with one cluster for each color and
 distance is determined in L*a*b* coordinates. The centers are initialized to
 hard-coded, measured values from several of the photographs.
 
 The return value C<$board> is an arrayref of 20 rows, each of which is an
-arrayref of 20 items. Each item is one of the C<WRGBY> letters.
+arrayref of 20 items. Each item is one of the C<RGBYW> letters. Afterwards
+the five color centers are returned in the order RGBYW, each as an RGB
+triple inside an arrayref.
 
 The optional argument C<progress> is a coderef which is called after every
 iteration of the clustering algorithm with the argument C<$delta>, a float
@@ -203,7 +242,7 @@ sub cluster_colors :Export(:DEFAULT) {
     while (my @row = $bit->()) {
         push @res, [@row];
     }
-    [@res]
+    ([@res], map [cielab_to_rgb(@$_)], $r0, $g0, $b0, $y0, $w0)
 }
 
 # This function is internal. It reads the color sample files in the
