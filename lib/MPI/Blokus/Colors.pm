@@ -16,6 +16,7 @@ package MPI::Blokus::Colors;
 use Modern::Perl 2018;
 use Export::Attrs;
 
+use Clone qw(clone);
 use List::Util qw(min max sum0);
 use List::MoreUtils qw(zip6 natatime);
 use Image::Magick;
@@ -144,11 +145,11 @@ sub cluster_colors :Export(:DEFAULT) {
 
     # Initialize the clusters for R, G, B, Y, W to the average of human-
     # selected samples from the first few images in their 20x20 form.
-    my $r0 = state $_r0 = read_color_samples('red.txt');
-    my $g0 = state $_g0 = read_color_samples('green.txt');
-    my $b0 = state $_b0 = read_color_samples('blue.txt');
-    my $y0 = state $_y0 = read_color_samples('yellow.txt');
-    my $w0 = state $_w0 = read_color_samples('white.txt');
+    my $r0 = clone state $_r0 = read_color_samples('red.txt');
+    my $g0 = clone state $_g0 = read_color_samples('green.txt');
+    my $b0 = clone state $_b0 = read_color_samples('blue.txt');
+    my $y0 = clone state $_y0 = read_color_samples('yellow.txt');
+    my $w0 = clone state $_w0 = read_color_samples('white.txt');
 
     # Run k-means clustering around r0, g0, b0, y0, w0.
     my @board;
