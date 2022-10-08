@@ -4,7 +4,7 @@ use Modern::Perl 2018;
 use Test::More;
 use Path::Tiny;
 
-my @files = path("verified")->children;
+my @files = path("t")->children(qr/\.txt$/);
 plan tests => 0+ @files;
 for my $src (sort @files) {
     my $name = $src->basename(qr/.txt$/);
