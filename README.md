@@ -6,7 +6,7 @@ This project collects the boards of *Blokus* games played at the MPI MiS.
 
 Photos of boards can be uploaded into the `raw` directory. The tiles are
 shiny and reflect light. Please try to take the photo carefully with the
-least amount of glare and under normal light. Name the photo with the date
+least amount of flare and under normal light. Name the photo with the date
 it was taken in the format `yyyy.mm.dd` so that the photos sort correctly.
 
 Photos from `raw` have to be preprocessed by hand before they can be handed
@@ -48,8 +48,8 @@ $ perl blokus.pl cropped/2022.09.30.jpg synth/2022.09.30.png
 
 ![Synthesized board of 30 September 2022](synth/2022.09.30.png)
 
-The program can make mistakes, especially when there is a lot of glare
-on the blocks! Please check the that output image is correct by comparing
+The program can make mistakes, especially when there is a lot of flare
+on the blocks! Please check that the output image is correct by comparing
 it to the original. I do this by opening both images next to each other
 and comparing the blocks one color at a time. Sometimes only single tiles
 are wrong, so please pay attention!
@@ -103,12 +103,12 @@ $ perl blokus.pl --filtered=30f.png --scaled=30s.png --color-table=30c.png cropp
 ![Board printed in a terminal](.images/tty-output.png)
 
 If no output file is given and `blokus.pl` runs in a terminal, it prints
-the above colored version of the board for quick inspection.
+the above colored version of the board for quick inspection and enjoyment.
 
 The first processing step applies heavy image filters to the input file.
-They increase the saturation and clarify of colors as well as smudge out
+They increase the saturation and clarity of colors as well as smudge out
 flares in the photo. Concretely, this is a color grading, mean curvature
-and medien smoothing from [G'MIC]. The result of these filters is stored
+and median smoothing from [G'MIC]. The result of these filters is stored
 in `30f.png`:
 
 ![Filtered image](.images/30f.png)
@@ -153,7 +153,7 @@ color space.
 When the clustering converges, all pixels are classified as red, green, blue,
 yellow or white. This data is used to produce the textual or image output.
 The cluster centers and hence the reference colors for the current image can
-be exported:
+be exported (as `30c.png` in the command given above):
 
 ![Color table for 2022.09.30](.images/30c.png)
 
