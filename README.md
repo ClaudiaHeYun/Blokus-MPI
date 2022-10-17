@@ -142,13 +142,14 @@ centers, grouping points to their closest center in Euclidean distance and
 then updating the centers by averaging over each group. This process is
 iterated until the centers stabilize.
 
-When one thinks about pixels, one thinks about its RGB channels, encoding
+When one thinks about pixels, one thinks about RGB channels, encoding
 the mixing coefficients of red, green and blue that make up the color.
 However, the RGB color space is not [perceptually uniform] in the Euclidean
 distance and we also have mixed colors like yellow and white and the green
-blocks in the Blokus game are closer to blue-green than pure-green.
-Instead, we do clustering in the [L\*a\*b\*](https://en.wikipedia.org/wiki/CIELAB_color_space)
-color space.
+blocks in the Blokus game are closer to blue-green than pure-green. Thus,
+some of our clusters are harder to separate than the others in the RGB
+color space. Instead, we do clustering in the perceptually uniform
+[L\*a\*b\*](https://en.wikipedia.org/wiki/CIELAB_color_space) color space.
 
 When the clustering converges, all pixels are classified as red, green, blue,
 yellow or white. This data is used to produce the textual or image output.
@@ -165,6 +166,19 @@ instead of (threshold-based) color detection.
 [perceptual hashing]: http://www.phash.org
 [k-means clustering]: https://en.wikipedia.org/wiki/K-means_clustering
 [perceptually uniform]: https://en.wikipedia.org/wiki/Color_appearance_model
+
+### Color choice
+
+Using the `-R`, `-G`, `-B`, `-Y`, `-W` switches, you can substitute the
+colors from the original board with any colors you want. These colors are
+parsed by ImageMagick, so you can use [a lot of formats](https://imagemagick.org/script/color.php).
+Here is a vaguely autumn-themed board:
+
+``` console
+$ perl blokus.pl -R=maroon -G=ForestGreen -B=SkyBlue4 -Y=orange cropped/2022.10.10.jpg
+```
+
+![Autumn-themed 2022.10.10](.images/autumn.png)
 
 ### Dependencies
 
