@@ -60,6 +60,14 @@ tile and board. The file can also be provided as the last argument without
 the B<--output> option. Use this option if you want the image file and also
 see the board on stdout.
 
+=item B<-R|--red>=I<color>, B<-G|--green>=I<color>, B<-B|--blue>=I<color>,
+B<-Y|--yellow>=I<color>, B<-W|--white>=I<color>
+
+Set the colors used to produce the board image. If a color is not set,
+the respective default is used. You can use all ways of specifying
+colors which are understood by ImageMagick, such as C<#rrggbb>,
+C<#rrggbbaa>, C<hsb(...)> or color names such as C<maroon>.
+
 =back
 
 =cut
@@ -70,6 +78,11 @@ GetOptions(
     'scaled=s'      => \my $scaled_file,
     'color-table=s' => \my $color_table_file,
     'output=s'      => \my $image_file,
+    'R|red=s'       => \my $color_red,
+    'G|green=s'     => \my $color_green,
+    'B|blue=s'      => \my $color_blue,
+    'Y|yellow=s'    => \my $color_yellow,
+    'W|white=s'     => \my $color_white,
 ) or pod2usage(2);
 
 pod2usage(-exitval => 0, -verbose => 1) if $help;
@@ -98,6 +111,14 @@ my $outfile = shift;
 
 $filtered_file //= tempfile(SUFFIX => '.png');
 $scaled_file   //= tempfile(SUFFIX => '.png');
+
+my %COLORS = (
+    R => $color_red    // '#ff0000',
+    G => $color_green  // '#00b060',
+    B => $color_blue   // '#0000ff',
+    Y => $color_yellow // '#ffff00',
+    W => $color_white  // '#ffffff',
+);
 
 =head2 Processing pipeline
 
@@ -208,21 +229,21 @@ sub image_output {
     }
 
     sub white_tile {
-        my $tile = shift;
+        my ($tile, $color) = @_;
         my ($h, $w) = $tile->Get('height', 'width');
         my $ctile = Image::Magick->new;
         $ctile->ReadImage('granite:');
         $ctile->Crop($w . 'x' . $h . '+0+0');
-        $ctile->Colorize(fill => '#ffffff', blend => '20/20/20');
+        $ctile->Colorize(fill => $color, blend => '20/20/20');
         $ctile
     }
 
     my %tile = (
-        R => colorized($tile, '#ff0000'),
-        G => colorized($tile, '#00b060'),
-        B => colorized($tile, '#0000ff'),
-        Y => colorized($tile, '#ffff00'),
-        W => white_tile($tile),
+        R =>  colorized($tile => $COLORS{R}),
+        G =>  colorized($tile => $COLORS{G}),
+        B =>  colorized($tile => $COLORS{B}),
+        Y =>  colorized($tile => $COLORS{Y}),
+        W => white_tile($tile => $COLORS{W}),
     );
 
     my $seph = int($tw / 15);
