@@ -11,21 +11,22 @@ it was taken in the format `yyyy.mm.dd` so that the photos sort correctly.
 
 Photos from `raw` have to be preprocessed by hand before they can be handed
 to the `blokus.pl` program. First, the Blokus board needs to be cut out of
-the photo. For this I use the image editor Gimp. I add four *Guides* (via
-the Image » Guides menu) and arrange them to form a square around the board.
-Then I use the *Perspective* tool and drag the corners of the board into
-the corners of the square formed by the guides. Iterate this a few times
-for all four corners and it will eventually converge. Click *Transform* to
-apply the perspective transformation. Then use the *Crop* tool to cut out
-the square board directly at the guides.
+the photo. For this I use the image editor Gimp. First rotate the image so
+that the board is almost axes-parallel. Then use the *Crop* tool to crop
+the  image to a small square around the board. Using the *Perspective* tool,
+drag the corners of the board into the corners of the image. Iterate this
+a few times for all four corners and it will stabilize. Click *Transform*
+to apply the perspective transformation and *Flatten image*.
 
 There is one blue block missing from our Blokus game and it is replaced by
 a paper block that is green-ish. Use the *Color picker* to select some the
 color from a blue tile on the image and just draw over the paper block.
 Save that cropped and fixed version of the image in the `cropped` directory.
+But keep the image open in Gimp because it may need furhter adjustments
+if the `blokus.pl` script fails to detect some colors correctly.
 
 I recommend to downscale the cropped board to at most 800x800 and to use
-JPEG quality of 80% to save space:
+JPEG quality of 80% to save space before committing:
 
 ``` console
 $ mogrify -strip -resize "800x800>" -quality 80 cropped/2022.09.30.jpg
@@ -53,6 +54,16 @@ on the blocks! Please check that the output image is correct by comparing
 it to the original. I do this by opening both images next to each other
 and comparing the blocks one color at a time. Sometimes only single tiles
 are wrong, so please pay attention!
+
+The script is able to detect colors correctly most of the time. If a tile
+has too much flare on it, it may be detected as white. That is the only
+failure mode I have observed so far. It is sufficient to pick the color
+the tile is supposed to be from a near-by tile and draw on the tile; then
+save the image and rerun `blokus.pl`. Since this change of color on the
+image may affect the color values learned by the script, you should
+re-check all tiles. This can get annoying, so I usually run `blokus.pl`
+once, take a quick glance at all the flares on the photo and fix them all
+in one go. Then I run the script again and do one comparison.
 
 After you have verified that the output is correct, record it:
 
