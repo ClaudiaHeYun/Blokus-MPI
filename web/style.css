@@ -1,0 +1,41 @@
+body {
+  font-family: monospace;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#loading-screen {
+  position: relative;
+  width: 40vw;
+  height: 20vh;
+  left: 30vw;
+  top: 40vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid black;
+  box-shadow: 5px 10px;
+}
+
+#color-picker {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  display: none;
+  margin: 5px 5px;
+}
+
+#color-picker div {
+  border: 1px solid black;
+  box-shadow: 5px 10px;
+  padding: 5px;
+  background: white;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}

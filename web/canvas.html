@@ -1,0 +1,214 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://www.unpkg.com/three-dots@0.3.2/dist/three-dots.min.css" />
+<script>
+function fullpage_canvas() {
+  let canvas = document.getElementById('board');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', (ev) => {
+  fullpage_canvas();
+  refresh_board();
+}, true);
+
+function block_tile() {
+  let canvas = document.createElement('canvas');
+  let ctx = canvas.getContext('2d');
+  let img = document.getElementById('block-tile');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+  return canvas;
+}
+
+function board_tile() {
+  let canvas = document.createElement('canvas');
+  let ctx = canvas.getContext('2d');
+  let img = document.getElementById('board-tile');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+  return canvas;
+}
+
+var boards;
+var block;
+var board;
+function draw_board(tiledata, name) {
+  let canvas = document.getElementById('board');
+  let ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  block = block_tile();
+  board = board_tile();
+  let w = block.width;
+  let h = block.height;
+  let x = 0;
+  let y = 0;
+  let colors = {
+    'R': document.getElementById('picker-R').value,
+    'G': document.getElementById('picker-G').value,
+    'B': document.getElementById('picker-B').value,
+    'Y': document.getElementById('picker-Y').value,
+    'W': document.getElementById('picker-W').value
+  };
+
+  /* Draw the board centered, page-filling and below the caption. */
+  let lines = tiledata.split(/\n/).filter(s => s.length > 0);
+
+  ctx.save();
+  ctx.font = "20px monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "black";
+  ctx.shadowBlur = 7;
+  let ch = 60; /* caption area height */
+  ctx.fillText(name, canvas.width / 2, 30);
+  ctx.restore();
+
+  let aw = canvas.width; /* available width */
+  let ah = canvas.height - ch; /* available height */
+  let pw = lines.length * w; /* picture width (= height) */
+  let sc = Math.min(aw / pw, ah / pw); /* scaling */
+
+  ctx.save();
+  ctx.translate((aw - pw*sc) / 2, ch);
+  ctx.scale(sc, sc);
+
+  for (let line of lines) {
+    x = 0;
+    for (let tile of line) {
+      draw_tile(ctx, tile, colors[tile], x*w, y*h);
+      x++;
+    }
+    y++;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    ctx.strokeRect(i*w, 0, w, pw);
+    ctx.strokeRect(0, i*w, pw, w);
+  }
+
+  ctx.restore();
+}
+
+function draw_tile(ctx, tile, color, x, y) {
+  ctx.drawImage(tile == 'W' ? board : block, x, y);
+  ctx.save();
+  ctx.globalAlpha = tile == 'W' ? 0.2 : 0.5;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, board.width, board.height);
+  ctx.restore();
+}
+
+var current_board = 0;
+function refresh_board() {
+  let board = boards[current_board];
+  if ("tiledata" in board) {
+    return draw_board(board["tiledata"], board["name"]);
+  }
+  return fetch(board["download_url"])
+    .then((response) => {
+      if (response.status !== 200) {
+        console.log('Could not fetch board list: ' + response.status);
+        return;
+      }
+
+      return response.text().then((data) => {
+        board["tiledata"] = data;
+        return draw_board(data, board["name"]);
+      });
+    });
+}
+
+function set_board(index) {
+  current_board = index;
+  refresh_board();
+}
+
+function next_board() {
+  current_board++;
+  if (current_board >= boards.length) {
+    current_board = 0;
+  }
+  return set_board(current_board);
+}
+
+function prev_board() {
+  current_board--;
+  if (current_board < 0) {
+    current_board = boards.length - 1;
+  }
+  return set_board(current_board);
+}
+
+/* Start fetching the set of board files from GitHub immediately. */
+const base_url = "https://api.github.com/repos/ClaudiaHeYun/Blokus-MPI/contents/t";
+let boards_promise = fetch(base_url)
+  .then((response) => {
+    if (response.status !== 200) {
+      console.log('Could not fetch board list: ' + response.status);
+      return;
+    }
+
+    return response.json().then((data) => {
+      return data
+        .filter(file => file["name"].endsWith(".txt"))
+        .sort((a,b) => a["name"].localeCompare(b["name"]))
+        .reverse();
+    });
+  })
+  .catch((err) => {
+    console.log('Fetch Error: ', err);
+  });
+/* We display a nice loading screen. Make sure people see it for one
+  second at least even if their connection is faster. */
+let loader_promise = new Promise((resolve) => {
+  setTimeout(resolve, 1000);
+});
+Promise.all([boards_promise, loader_promise])
+  .then((values) => {
+    boards = values[0];
+    document.onkeydown = (ev) => {
+      ev = ev || window.event;
+      if (ev.keyCode == '37') { /* left arrow */
+        prev_board();
+      }
+      else if (ev.keyCode == '39') { /* right arrow */
+        next_board();
+      }
+    };
+    fullpage_canvas();
+    set_board(0);
+    document.getElementById('loading-screen').style.display = "none";
+    document.getElementById('board').style.display = "block";
+    document.getElementById('color-picker').style.display = "block";
+  });
+</script>
+</head>
+<body>
+  <div id="assets" style="display: none">
+    <img id="block-tile" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAAuklEQVRYw+2ZSwrAIAwFU/FgOVqOlqN1IRSh0Ap+8gIvO7uQ6aixTURgQ1XRYK42MDN3R2AyMxEpbezu4c5U9VFTn6fhZP1yFcztXhFOwHtbg9rKs4gfbo/ly4S29jn7PVVpba11Nph96viM7baaifEZ6o53nffNdEosYhGLWMQiFrGIRSxiLf2WP1aaO/rnsx7rcHUp7d4KqVwmtBVY4WU6nVxEhHYGvK2+txESPUABYZJ3dwewcQcaN9J7OvgG4nxUAAAAAElFTkSuQmCC" />
+    <img id="board-tile" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAJFBMVEWyqbK7u7u7sruysrKyu7KpqbK7u8OpsrKpsqmgqaCgoKCgmKD0dey1AAAAAWJLR0QKaND0VgAAAAd0SU1FB+YMFhQ3Bt4AudAAAAAQY2FOdgAAAIAAAACAAAAAAAAAAACVCQL0AAADxklEQVQ4y0VUv4/bNhQm8Uwk5+noZ3HIRtBGLp7qCM6QyTIhDZni4zG4aqqq3AHdZD9Qg6ekwe1BBd3gye3Vi9f+g6XbHkoQnN7jx+/HI+M6HTuT3jmevgZjXqbGTAbSQcoq3FI1SoqVCv0qs+0q21KNWyQmxaSqwAhhZkM9XNcGtB6bqtaMrFKIeRf6nvCLzVSBuHMPMjCoKl1eAbhJ6sRAcG10fZzwoWBPyd73m5FUdqWUvFfNY3P6Iyy67RmnnkLc3FSgqylM/XFqjJmdcTCk+AOtiySzYd/ZnXfH4+7pjCMrrav551QYWa79vJbixUvxD06f4fcMi5VVu988qe0HsoUtmDuVvORxa7GuDE6PUzc0ptY1w4+aOiSHDV1+JbLLzB6tIrljYuD04k069q/hJIU/wYv6IsWqBtagdVkaSOXhG9HIrbq+W+FWIoNUGwmoZa1NzXmUe30Ha5gapnok+mRpM9pE/VqZFaqQl49yw0oZWyRHfit0NanGwOeTqEoJLFP3T7l6ZUvXyryMj8OOIt7uxGQ1NUNzAwcjtTaJj1KL+nT9ULKONrhJVRpLF/vyFJtk++qgDi0DDjBD4OXF0LsToFgDQDV7nbKkfUsrXEYzG7kqKDThIx3b1katTaJB82gRrwy4+sI4g8aAZIk7nta7/UFZucwcXX+z5MOGDpYNjedwIZBXgFOtk/QzeB+LHctQJdtWuSK8K7bSYmG33fvyZBv22RkPZhYfhCLiaDS1cDEHwJIRLmlENu8DBSK0KpClLlh2/HNx6yeCz1x6JQYpzGOHlu5qztpiQRv7nTxu28ssJ9xgeKRrtWR3XgAO4by0EDzG2vCZ0UNgebNfxIZ4eVAUE2GJJPUqzgJKuNHrdDyv+S+QHLjR0Vid3nCm6N5aFWvtFn2/pgJ3T28x90+s5nUVBZt5z6eO3/Fh6WIAnY98VDFS+K3FUf7+qbD9Lth3SeSG7DBOB0ZWVXXlB8Mb+J8Zu6YKf6YiHDb3FhMKy2dmDH83YqprOM+ni6d7Zhb9eUgDPtgCpTp1+bJ7Zsb0lRvUk3TC+d1EeP8j/MfsL3aJTTGi67D8JCnyiAP+L7MNMwYFTN3ZIedMPJ6Zsfycyrzr8xW1tt/HkOdNfnQPX5h8A/GvKW+FSye1d1Dr9yBujRfsXORybz/aQD4m+sNx2ze/7q57Jo3TtQcX7RewAHMEORXnVLDC2U9dR32S5eFy0dD3TMX84Lxl9YV/E6m/1IkrxS16AD7mMo4f++mxsDUl/WpPFDa4/Irv+qa4t/d/A8JINYk5/+sQAAAAMXRFWHRjb21tZW50ACAgSW1wb3J0ZWQgZnJvbSBHSUYgaW1hZ2U6IGJhY2tncm91bmQuZ2lm71Go7wAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMi0xMi0yMlQyMDo1NTowNiswMDowMHVDsfAAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjItMTItMjJUMjA6NTU6MDYrMDA6MDAEHglMAAAAAElFTkSuQmCC" />
+  </div>
+  <div id="loading-screen">
+    <b>Loading Blokus boards...</b>
+    <div class="dot-typing"></div>
+  </div>
+  <canvas id="board"></canvas>
+  <div id="color-picker">
+    <div>
+      <!--<label for="picker-R">Red:</label>   --> <input id="picker-R" type="color" value="#ff0000" oninput="refresh_board();" />
+      <!--<label for="picker-G">Green:</label> --> <input id="picker-G" type="color" value="#00b060" oninput="refresh_board();" />
+      <!--<label for="picker-B">Blue:</label>  --> <input id="picker-B" type="color" value="#0000ff" oninput="refresh_board();" />
+      <!--<label for="picker-Y">Yellow:</label>--> <input id="picker-Y" type="color" value="#ffff00" oninput="refresh_board();" />
+      <!--<label for="picker-W">White:</label> --> <input id="picker-W" type="color" value="#ffffff" oninput="refresh_board();" />
+    </div>
+  </div>
+</body>
+</html>
+
+<!-- vim: set sw=2 ts=2 et sts=2: -->
